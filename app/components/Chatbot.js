@@ -23,7 +23,7 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("http://107.170.5.236:8000/generate", {
+      const response = await axios.post("https://dhaara.io/generate", {
         prompt: `### Human: ${input}\n\n### Assistant:`,
         max_tokens: 100,
         temperature: 0.8,
