@@ -14,6 +14,16 @@
   }
 }
 
+:root {
+  --text-primary: #000000;
+  /* other variables */
+}
+
+/* In your component */
+.text-primary {
+  color: var(--text-primary);
+}
+
 body {
   color: var(--foreground);
   background: var(--background);
