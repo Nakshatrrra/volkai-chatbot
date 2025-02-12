@@ -26,8 +26,6 @@ const Chatbot = () => {
       const response = await axios.post("https://dhaara.io/generate", {
         prompt: `### Human: ${input}\n\n### Assistant:`,
         max_tokens: 100,
-        temperature: 0.8,
-        top_p: 0.95,
       });
 
       const assistantMessage = { role: "assistant", content: response.data.response };
