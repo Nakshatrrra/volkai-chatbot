@@ -4,12 +4,12 @@ import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 
 const Chatbot = () => {
-  const [messages, setMessages] = useState([]); 
-  const [input, setInput] = useState("");  
-  const [loading, setLoading] = useState(false);  
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [maxTokens, setMaxTokens] = useState(1000); // Default value changed to a middle range
   const messagesEndRef = useRef(null);
 
-  // Auto-scroll to the latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -25,11 +25,10 @@ const Chatbot = () => {
     try {
       const response = await axios.post("https://dhaara.io/generate", {
         prompt: `### Human: ${input}\n\n### Assistant:`,
-        max_tokens: 1000,
+        max_tokens: maxTokens,
       });
 
       const assistantMessage = { role: "assistant", content: response.data.response };
-
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
     } catch (error) {
       console.error("Error:", error);
@@ -37,10 +36,34 @@ const Chatbot = () => {
 
     setLoading(false);
   };
+
+  // Generate token options from 50 to 5000 with step of 50
+  const tokenOptions = Array.from(
+    { length: (5000 - 50) / 50 + 1 },
+    (_, i) => 50 + i * 50
+  );
+
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-lg border text-black">
-      <h2 className="text-2xl font-bold mb-4 text-center text-black">Chat with VolkAI</h2>
-  
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold text-black">Chat with VolkAI</h2>
+        <div className="flex items-center gap-2">
+          <label htmlFor="maxTokens" className="text-black text-sm">Max Tokens:</label>
+          <select
+            id="maxTokens"
+            value={maxTokens}
+            onChange={(e) => setMaxTokens(Number(e.target.value))}
+            className="p-1 border rounded text-black bg-white w-24"
+          >
+            {tokenOptions.map((value) => (
+              <option key={value} value={value}>
+                {value}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Chat Box */}
       <div className="h-96 overflow-y-auto bg-gray-100 p-3 rounded-lg border">
         {messages.map((msg, index) => (
@@ -58,7 +81,7 @@ const Chatbot = () => {
         {loading && <p className="text-gray-500 text-center">VolkAI is typing...</p>}
         <div ref={messagesEndRef} />
       </div>
-  
+
       {/* Input Box */}
       <div className="mt-4 flex">
         <input
