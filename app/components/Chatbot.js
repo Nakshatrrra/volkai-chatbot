@@ -7,7 +7,7 @@ const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [maxTokens, setMaxTokens] = useState(1000); // Default value changed to a middle range
+  const [maxTokens, setMaxTokens] = useState(300); // Default value changed to a middle range
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
