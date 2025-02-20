@@ -24,7 +24,7 @@ const Chatbot = () => {
 
     try {
       const response = await axios.post("https://dhaara.io/generate", {
-        prompt: `### Context : \n\n### Human: ${input}\n\n### Assistant:`,
+        prompt: `Context: You are VolkAI, a friendly AI assistant designed for Kairosoft AI Solutions Limited. \n\n### Human: ${input}\n\n### Assistant:`,
         max_tokens: maxTokens,
       });
 
