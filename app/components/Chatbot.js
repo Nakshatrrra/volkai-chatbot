@@ -25,7 +25,7 @@ const Chatbot = () => {
     try {
       const response = await axios.post("https://dhaara.io/generate", {
         messages: [
-          { role: "system", content: "You are VolkAI, a friendly AI assistant designed for Kairosoft AI Solutions Limited." },
+          // { role: "system", content: "You are VolkAI, a friendly AI assistant designed for Kairosoft AI Solutions Limited." },
           userMessage
         ],
         max_tokens: maxTokens,
