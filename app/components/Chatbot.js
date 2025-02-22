@@ -1,13 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import axios from "axios";
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [maxTokens, setMaxTokens] = useState(300); // Default value changed to a middle range
+  const [maxTokens, setMaxTokens] = useState(300);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -23,17 +22,44 @@ const Chatbot = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post("https://dhaara.io/generate", {
-        messages: [
-          // { role: "system", content: "You are VolkAI, a friendly AI assistant designed for Kairosoft AI Solutions Limited." },
-          userMessage
-        ],
-        max_tokens: maxTokens,
-        temperature: 0.5
+      const response = await fetch("https://dhaara.io/generate_stream", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: [userMessage],
+          max_tokens: maxTokens,
+          temperature: 0.5,
+        }),
       });
 
-      const assistantMessage = { role: "assistant", content: response.data.response };
+      if (!response.body) throw new Error("ReadableStream not supported");
+
+      const reader = response.body.getReader();
+      let assistantMessage = { role: "assistant", content: "" };
       setMessages((prevMessages) => [...prevMessages, assistantMessage]);
+
+      const decoder = new TextDecoder();
+      let newContent = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+
+        newContent += chunk; // Append new tokens
+
+        // Update the last assistant message with streamed content
+        setMessages((prevMessages) =>
+          prevMessages.map((msg, index) =>
+            index === prevMessages.length - 1
+              ? { ...msg, content: newContent }
+              : msg
+          )
+        );
+      }
     } catch (error) {
       console.error("Error:", error);
     }
@@ -41,7 +67,6 @@ const Chatbot = () => {
     setLoading(false);
   };
 
-  // Generate token options from 50 to 5000 with step of 50
   const tokenOptions = Array.from(
     { length: (5000 - 50) / 50 + 1 },
     (_, i) => 50 + i * 50
