@@ -87,7 +87,7 @@ const InternetChatbot = () => {
         top_p: 0.8,
       };
 
-      const response = await fetch("https://dhaara.io/generate_stream", {
+      const response = await fetch("https://dhaara.io/generate_stream_withoutcontext", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
