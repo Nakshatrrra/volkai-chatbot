@@ -19,18 +19,21 @@ const InternetChatbot = () => {
       if (!response.ok) throw new Error("Failed to fetch summary");
 
       const data = await response.json();
-      return data.summary || "";
+      return {
+        summary: data.summary || "No summary available.",
+        sources: data.sources || [] // API should return an array of source links
+      };
     } catch (error) {
       console.error("Error fetching summary:", error);
-      return "Could not retrieve summary.";
+      return { summary: "Could not retrieve summary.", sources: [] };
     }
   };
 
-  const handleStream = async (response) => {
+  const handleStream = async (response, sources) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "", sources }]);
 
     try {
       while (true) {
@@ -74,8 +77,8 @@ const InternetChatbot = () => {
     setIsGenerating(true);
 
     try {
-      // Fetch summary from API
-      const summary = await fetchSummary(input);
+      // Fetch summary and sources from API
+      const { summary, sources } = await fetchSummary(input);
 
       const payload = {
         messages: [
@@ -95,12 +98,12 @@ const InternetChatbot = () => {
 
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-      await handleStream(response);
+      await handleStream(response, sources);
     } catch (error) {
       console.error("Error:", error);
       setMessages(prev => [
         ...prev,
-        { role: "assistant", content: "Sorry, I encountered an error. Please try again." }
+        { role: "assistant", content: "Sorry, I encountered an error. Please try again.", sources: [] }
       ]);
     } finally {
       setIsGenerating(false);
@@ -140,6 +143,22 @@ const InternetChatbot = () => {
           >
             <strong>{msg.role === "user" ? "You" : "VolkAI"}:</strong>{" "}
             <span>{msg.content}</span>
+
+            {/* Display sources if available */}
+            {msg.sources && msg.sources.length > 0 && (
+              <div className="mt-2 text-xs text-gray-600">
+                <strong>Sources:</strong>
+                <ul className="list-disc list-inside">
+                  {msg.sources.map((source, i) => (
+                    <li key={i}>
+                      <a href={source} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        {source}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         ))}
         <div ref={messagesEndRef} />
