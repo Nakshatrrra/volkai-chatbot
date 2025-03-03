@@ -21,7 +21,7 @@ const InternetChatbot = () => {
       const data = await response.json();
       return {
         summary: data.summary || "No summary available.",
-        sources: data.sources || [] // API should return an array of source links
+        sources: data.sources || []
       };
     } catch (error) {
       console.error("Error fetching summary:", error);
@@ -33,7 +33,7 @@ const InternetChatbot = () => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
-    setMessages(prev => [...prev, { role: "assistant", content: "", sources }]);
+    setMessages(prev => [...prev, { role: "assistant", content: "", sources }] );
 
     try {
       while (true) {
@@ -77,12 +77,11 @@ const InternetChatbot = () => {
     setIsGenerating(true);
 
     try {
-      // Fetch summary and sources from API
       const { summary, sources } = await fetchSummary(input);
 
       const payload = {
         messages: [
-          { role: "system", content: summary }, // Inject summary as context
+          { role: "system", content: summary },
           { role: "user", content: input }
         ],
         max_tokens: maxTokens,
@@ -123,9 +122,7 @@ const InternetChatbot = () => {
             className="p-1 border rounded text-black bg-white w-24"
           >
             {Array.from({ length: 20 }, (_, i) => (i + 1) * 50).map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
+              <option key={value} value={value}>{value}</option>
             ))}
           </select>
         </div>
@@ -135,25 +132,16 @@ const InternetChatbot = () => {
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`p-3 my-2 rounded-lg ${
-              msg.role === "user"
-                ? "bg-blue-500 text-white ml-auto max-w-[80%] text-right"
-                : "bg-gray-300 text-black mr-auto max-w-[80%] whitespace-pre-wrap"
-            }`}
+            className={`p-3 my-2 rounded-lg ${msg.role === "user" ? "bg-blue-500 text-white ml-auto max-w-[80%] text-right" : "bg-gray-300 text-black mr-auto max-w-[80%] whitespace-pre-wrap"}`}
           >
-            <strong>{msg.role === "user" ? "You" : "VolkAI"}:</strong>{" "}
-            <span>{msg.content}</span>
-
-            {/* Display sources if available */}
+            <strong>{msg.role === "user" ? "You" : "VolkAI"}:</strong> <span>{msg.content}</span>
             {msg.sources && msg.sources.length > 0 && (
               <div className="mt-2 text-xs text-gray-600">
                 <strong>Sources:</strong>
                 <ul className="list-disc list-inside">
                   {msg.sources.map((source, i) => (
                     <li key={i}>
-                      <a href={source} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-                        {source}
-                      </a>
+                      <a href={source} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">{source}</a>
                     </li>
                   ))}
                 </ul>
@@ -161,6 +149,7 @@ const InternetChatbot = () => {
             )}
           </div>
         ))}
+        {isGenerating && <div className="text-center text-gray-600">Fetching response...</div>}
         <div ref={messagesEndRef} />
       </div>
 
@@ -177,11 +166,7 @@ const InternetChatbot = () => {
         <button
           onClick={sendMessage}
           disabled={isGenerating}
-          className={`px-6 py-3 bg-blue-600 text-white rounded-r-lg transition-colors
-            ${isGenerating 
-              ? "opacity-50 cursor-not-allowed" 
-              : "hover:bg-blue-700 active:bg-blue-800"
-            }`}
+          className={`px-6 py-3 bg-blue-600 text-white rounded-r-lg transition-colors ${isGenerating ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700 active:bg-blue-800"}`}
         >
           Send
         </button>
