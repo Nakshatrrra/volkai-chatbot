@@ -6,7 +6,6 @@ const Chatbot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [maxTokens, setMaxTokens] = useState(100);
   const messagesEndRef = useRef(null);
 
   useEffect(() => {
@@ -17,26 +16,26 @@ const Chatbot = () => {
     if (!input.trim() || isGenerating) return;
 
     const userMessage = { role: "user", content: input };
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsGenerating(true);
 
+    const HF_TOKEN = process.env.NEXT_PUBLIC_HF_TOKEN;
     try {
-      // Send only the latest message instead of the full conversation history
-      const payload = {
-        messages: [userMessage],
-        max_tokens: maxTokens,
-        temperature: 0.5,
-      };
-
-      setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-      const response = await fetch("https://dhaara.io/v1/chat/completions", {
+      const response = await fetch("https://sido1o6oi7wffwlu.us-east-1.aws.endpoints.huggingface.cloud", {
         method: "POST",
         headers: {
+          "Accept": "application/json",
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${HF_TOKEN}`
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          inputs: `### Context: You're Volkai, Created by Kairosoft AI Solutions Limited. \n\n### Human: ${input}\n\n### Assistant: `,
+          parameters: {
+            temperature: 0.5,
+            max_new_tokens: 500
+          }
+        })
       });
 
       if (!response.ok) {
@@ -44,17 +43,16 @@ const Chatbot = () => {
       }
 
       const data = await response.json();
-      
-      setMessages(prevMessages => {
-        const lastMessage = { role: "assistant", content: data.generated_text };
-        return [...prevMessages.slice(0, -1), lastMessage];
-      });
+      const generatedText = data[0]?.generated_text || "No response received";
+  
+      // Extract only the first human response
+      const humanResponses = generatedText.match(/### Assistant: (.*?)\n/g);
+      const firstHumanResponse = humanResponses ? humanResponses[0].replace("### Assistant: ", "").trim() : "No response";
+  
+      setMessages((prev) => [...prev, { role: "assistant", content: firstHumanResponse }]);
     } catch (error) {
       console.error("Error:", error);
-      setMessages(prev => [
-        ...prev.slice(0, -1),
-        { role: "assistant", content: "Sorry, I encountered an error. Please try again." }
-      ]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "Error processing request." }]);
     } finally {
       setIsGenerating(false);
     }
@@ -62,24 +60,7 @@ const Chatbot = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-lg border text-black">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-black">Chat with VolkAI</h2>
-        <div className="flex items-center gap-2">
-          <label htmlFor="maxTokens" className="text-black text-sm">Max Tokens:</label>
-          <select
-            id="maxTokens"
-            value={maxTokens}
-            onChange={(e) => setMaxTokens(Number(e.target.value))}
-            className="p-1 border rounded text-black bg-white w-24"
-          >
-            {Array.from({ length: 20 }, (_, i) => (i + 1) * 50).map((value) => (
-              <option key={value} value={value}>
-                {value}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      <h2 className="text-2xl font-bold text-black mb-4">Chat with VolkAI</h2>
 
       <div className="h-[500px] overflow-y-auto bg-gray-100 p-3 rounded-lg border">
         {messages.map((msg, index) => (
@@ -91,8 +72,7 @@ const Chatbot = () => {
                 : "bg-gray-300 text-black mr-auto max-w-[80%] whitespace-pre-wrap"
             }`}
           >
-            <strong>{msg.role === "user" ? "You" : "VolkAI"}:</strong>{" "}
-            <span>{msg.content}</span>
+            <strong>{msg.role === "user" ? "You" : "VolkAI"}:</strong> {msg.content}
           </div>
         ))}
         <div ref={messagesEndRef} />
@@ -111,13 +91,11 @@ const Chatbot = () => {
         <button
           onClick={sendMessage}
           disabled={isGenerating}
-          className={`px-6 py-3 bg-blue-600 text-white rounded-r-lg transition-colors
-            ${isGenerating 
-              ? "opacity-50 cursor-not-allowed" 
-              : "hover:bg-blue-700 active:bg-blue-800"
-            }`}
+          className={`px-6 py-3 bg-blue-600 text-white rounded-r-lg transition-colors ${
+            isGenerating ? "opacity-50 cursor-not-allowed" : "hover:bg-blue-700 active:bg-blue-800"
+          }`}
         >
-          {isGenerating ? "Thinking..." : "Send"}
+          Send
         </button>
       </div>
     </div>
