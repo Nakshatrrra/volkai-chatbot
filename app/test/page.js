@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { HfInference } from "@huggingface/inference";
+
+const hf = new HfInference(process.env.NEXT_PUBLIC_HF_TOKEN);
 
 const Chatbot = () => {
   const [messages, setMessages] = useState([]);
@@ -20,39 +23,48 @@ const Chatbot = () => {
     setInput("");
     setIsGenerating(true);
 
-    const HF_TOKEN = process.env.NEXT_PUBLIC_HF_TOKEN;
+    const prompt = `### Context: You're VolkAI, Created by Kairosoft AI Solutions Limited. \n\n### Human: ${input}\n\n### Assistant: `;
+
     try {
-      const response = await fetch("https://sido1o6oi7wffwlu.us-east-1.aws.endpoints.huggingface.cloud", {
-        method: "POST",
-        headers: {
-          "Accept": "application/json",
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${HF_TOKEN}`
+      const stream = hf.textGenerationStream({
+        endpointUrl: "https://sido1o6oi7wffwlu.us-east-1.aws.endpoints.huggingface.cloud",
+        inputs: prompt,
+        parameters: {
+          temperature: 0.5,
+          max_new_tokens: 500,
         },
-        body: JSON.stringify({
-          inputs: `### Context: You're Volkai, Created by Kairosoft AI Solutions Limited. \n\n### Human: ${input}\n\n### Assistant: `,
-          parameters: {
-            temperature: 0.5,
-            max_new_tokens: 500
-          }
-        })
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      let assistantMessage = { role: "assistant", content: "" };
+      setMessages((prev) => [...prev, assistantMessage]);
 
-      const data = await response.json();
-      const generatedText = data[0]?.generated_text || "No response received";
-  
-      // Extract only the first human response
-      const humanResponses = generatedText.match(/### Assistant: (.*?)(<\|endoftext\|>|### Human|###|$)/s);
-      const firstHumanResponse = humanResponses ? humanResponses[0].replace("### Assistant: ", "").trim() : "No response";
-  
-      setMessages((prev) => [...prev, { role: "assistant", content: firstHumanResponse }]);
+      let lastTokens = [];
+
+for await (const r of stream) {
+    let token = r.token.text;
+    lastTokens.push(token);
+
+    // Keep only the last 10 tokens to check for "<|endoftext|>"
+    if (lastTokens.length > 10) lastTokens.shift();
+
+    // Convert array to a string and check for "<|endoftext|>"
+    let lastText = lastTokens.join("");
+    if (lastText.includes("<|endoftext|>")) {
+        assistantMessage.content = assistantMessage.content.replace("<|endoftext|>", "").trim();
+        setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
+        break; // 🚨 Stop processing
+    }
+
+    assistantMessage.content += token;
+    setMessages((prev) => [...prev.slice(0, -1), assistantMessage]);
+}
+
     } catch (error) {
       console.error("Error:", error);
-      setMessages((prev) => [...prev, { role: "assistant", content: "Error processing request." }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Error processing request." },
+      ]);
     } finally {
       setIsGenerating(false);
     }
