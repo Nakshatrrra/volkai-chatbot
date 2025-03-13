@@ -46,7 +46,7 @@ const Chatbot = () => {
       const generatedText = data[0]?.generated_text || "No response received";
   
       // Extract only the first human response
-      const humanResponses = generatedText.match(/### Assistant: (.*?)\n/g);
+      const humanResponses = generatedText.match(/### Assistant: (.*?)(<\|endoftext\|>|### Human|###|$)/s);
       const firstHumanResponse = humanResponses ? humanResponses[0].replace("### Assistant: ", "").trim() : "No response";
   
       setMessages((prev) => [...prev, { role: "assistant", content: firstHumanResponse }]);
