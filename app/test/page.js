@@ -27,7 +27,7 @@ const Chatbot = () => {
 
     try {
       const stream = hf.textGenerationStream({
-        endpointUrl: "https://sido1o6oi7wffwlu.us-east-1.aws.endpoints.huggingface.cloud",
+        endpointUrl: "https://qvp1l56ransucwfd.us-east-1.aws.endpoints.huggingface.cloud",
         inputs: prompt,
         parameters: {
           temperature: 0.5,
